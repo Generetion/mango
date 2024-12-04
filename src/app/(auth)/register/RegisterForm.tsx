@@ -1,5 +1,6 @@
 "use client";
 
+import { registerUser } from "@/app/actions/authActions";
 import {
   registerSchema,
   RegisterSchema,
@@ -13,7 +14,6 @@ import {
   Input
 } from "@nextui-org/react";
 import {
-  FormProvider,
   useForm,
 } from "react-hook-form";
 import { GiPadlock } from "react-icons/gi";
@@ -22,15 +22,38 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    formState: {errors, isValid, isSubmitting},
+    setError,
+    formState: { errors, isValid, isSubmitting },
   } = useForm<RegisterSchema>({
-    resolver: zodResolver(registerSchema),
-    mode: 'onTouched',
+    // resolver: zodResolver(registerSchema),
+    mode: "onTouched",
   });
 
-  const onSubmit = (data: RegisterSchema) => {
+  const onSubmit = async (data: RegisterSchema) => {
     console.log(data);
-  }
+    const result = await registerUser(data);
+
+    if (result.status === "success") {
+      console.log("user register");
+    } else {
+      if (Array.isArray(result.error)) {
+        result.error.forEach((e: any) => {
+          console.log("e:::", e);
+          const fieldName = e.path.join(".") as
+            | "email"
+            | "name"
+            | "password";
+          setError(fieldName, {
+            message: e.messsagem,
+          });
+        });
+      } else {
+        setError("root.serverError", {
+          message: result.error,
+        });
+      }
+    }
+  };
 
   return (
     <Card className="w-3/5 mx-auto">
@@ -48,47 +71,47 @@ export default function RegisterForm() {
         </div>
       </CardHeader>
       <CardBody>
-          <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <Input
-              defaultValue=""
-              label="Name"
-              variant="bordered"
-              {...register("name")}
-              isInvalid={!!errors.name}
-              errorMessage={
-                errors.name?.message as string
-              }
-            />
-            <Input
-              defaultValue=""
-              label="Email"
-              variant="bordered"
-              {...register("email")}
-              isInvalid={!!errors.email}
-              errorMessage={
-                errors.email?.message as string
-              }
-            />
-            <Input
-              defaultValue=""
-              label="Password"
-              variant="bordered"
-              type="password"
-              {...register("password")}
-              isInvalid={!!errors.password}
-              errorMessage={
-                errors.password?.message as string
-              }
-            />
-            <Button
-              fullWidth
-              color="default"
-              type="submit"
-              isDisabled={!isValid}
-            >
-              Register
-            </Button>
-          </form>
+            defaultValue=""
+            label="Name"
+            variant="bordered"
+            {...register("name")}
+            isInvalid={!!errors.name}
+            errorMessage={
+              errors.name?.message as string
+            }
+          />
+          <Input
+            defaultValue=""
+            label="Email"
+            variant="bordered"
+            {...register("email")}
+            isInvalid={!!errors.email}
+            errorMessage={
+              errors.email?.message as string
+            }
+          />
+          <Input
+            defaultValue=""
+            label="Password"
+            variant="bordered"
+            type="password"
+            {...register("password")}
+            isInvalid={!!errors.password}
+            errorMessage={
+              errors.password?.message as string
+            }
+          />
+          <Button
+            fullWidth
+            color="default"
+            type="submit"
+            isDisabled={!isValid}
+          >
+            Register
+          </Button>
+        </form>
       </CardBody>
     </Card>
   );
